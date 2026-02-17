@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PSICOPLAN PRO</title>
+    <title>PSICOPLAN PROo</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#004d40">
     <link rel="apple-touch-icon" href="icon.png">
@@ -151,6 +151,11 @@
         .pdf-mse-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 5px; }
         .pdf-mse-item { background: #fafafa; padding: 6px; border-radius: 5px; border-left: 3px solid #b0bec5; font-size: 0.8em; }
         /* Sin footer en PDF */
+		
+		.pdf-no-split { break-inside: avoid; page-break-inside: avoid; }
+		.pdf-page-spacer { display:block; width:100%; }
+
+
     </style>
 </head>
 <body>
@@ -543,6 +548,42 @@
         cvs.addEventListener('touchmove',e=>{if(isD)ctx.lineTo(getXY(e).x,getXY(e).y);ctx.stroke();e.preventDefault()});
         function clearSig(){ ctx.clearRect(0,0,cvs.width,cvs.height); }
 
+
+		function avoidSplitBlocks(container, options) {
+		  const { pdfWidthMm, pdfHeightMm, marginTopMm, marginBottomMm, scale, selectors } = options;
+
+		  const usableMm = pdfHeightMm - marginTopMm - marginBottomMm;
+
+		  // Limpia espaciadores anteriores
+		  container.querySelectorAll('.pdf-page-spacer').forEach(el => el.remove());
+
+		  const containerRect = container.getBoundingClientRect();
+		  const pxPerMm = (containerRect.width * scale) / pdfWidthMm;
+		  const pagePx = usableMm * pxPerMm;
+
+		  const blocks = [...container.querySelectorAll(selectors.join(','))];
+
+		  blocks.forEach(block => {
+			// marca clase por si quieres estilos
+			block.classList.add('pdf-no-split');
+
+			const r = block.getBoundingClientRect();
+			const top = (r.top - containerRect.top) * scale;
+			const bottom = top + (r.height * scale);
+
+			const pageStart = Math.floor(top / pagePx) * pagePx;
+			const pageEnd = pageStart + pagePx;
+
+			// Si cruza el final de página -> empujar a la siguiente
+			if (bottom > pageEnd && top < pageEnd) {
+			  const spacer = document.createElement('div');
+			  spacer.className = 'pdf-page-spacer';
+			  spacer.style.height = `${pageEnd - top}px`;
+			  block.parentNode.insertBefore(spacer, block);
+			}
+		  });
+		}
+
         // PDF GENERATION
         async function generatePDF() {
             const btn = document.getElementById('btn-generate-pdf');
@@ -610,35 +651,60 @@
                 await new Promise(resolve => setTimeout(resolve, 800)); 
                 
                 const element = document.getElementById('final-report');
-                const canvas = await html2canvas(element, { scale: 2, logging: false, allowTaint: true, useCORS: true, scrollY: -window.scrollY });
-
-                wrapper.style.display = 'none'; 
-
-                <!-- const imgData = canvas.toDataURL('image/png'); -->
-                <!-- const { jsPDF } = window.jspdf; -->
-                <!-- const pdf = new jsPDF('p', 'mm', 'a4'); -->
-                <!-- const pdfWidth = pdf.internal.pageSize.getWidth(); -->
-                <!-- const imgProps = pdf.getImageProperties(imgData); -->
-                <!-- const imgHeight = (imgProps.height * pdfWidth) / imgProps.width; -->
-
-                <!-- pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight); -->
-                <!-- const pName = document.getElementById('patName').value || 'Paciente'; -->
-                <!-- pdf.save(`Expediente_${pName}.pdf`); -->
 				
-								
 				const { jsPDF } = window.jspdf;
-				const pdf = new jsPDF('p', 'mm', 'a4');
 
-				const pdfWidth = pdf.internal.pageSize.getWidth();
-				const pdfHeight = pdf.internal.pageSize.getHeight();
+const pdf = new jsPDF('p','mm','a4');  // ✅ ESTE FALTABA
+const pdfWidth = pdf.internal.pageSize.getWidth();
+const pdfHeight = pdf.internal.pageSize.getHeight();
 
+const scale = 2;
+const marginTop = 5;
+const marginBottom = 12;
+
+// bloques que NO quieres que se partan
+avoidSplitBlocks(element, {
+  pdfWidthMm: pdfWidth,
+  pdfHeightMm: pdfHeight,
+  marginTopMm: marginTop,
+  marginBottomMm: marginBottom,
+  scale,
+  selectors: [
+    '.pdf-section-title',   // títulos
+    '.pdf-mse-item',        // aquí están tus SOAP
+    '#r-dx',                // diagnóstico
+    '#r-timeline-container > div', // items de línea de vida
+    '#r-psy-grid .pdf-psy-card',   // tarjetas psicométricas
+    '#r-sig',               // firma (imagen)
+  ]
+});
+
+const canvas = await html2canvas(element, {
+  scale,
+  logging: false,
+  allowTaint: true,
+  useCORS: true,
+  backgroundColor: "#fff",
+  scrollY: 0
+});
+
+// opcional: limpiar espaciadores después
+element.querySelectorAll('.pdf-page-spacer').forEach(el => el.remove());
+
+
+wrapper.style.display = 'none';
+
+								
+				const usablePdfHeight = pdfHeight - marginTop - marginBottom;
+				
 				// Alto en px del canvas que equivale a 1 página en mm
-				const pageHeightPx = Math.floor((canvas.width * pdfHeight) / pdfWidth);
+				const pageHeightPx = Math.floor((canvas.width * usablePdfHeight) / pdfWidth);
 
 				let yPx = 0;
 				let page = 0;
 
 				while (yPx < canvas.height) {
+				
 				  const sliceHeightPx = Math.min(pageHeightPx, canvas.height - yPx);
 
 				  // Canvas temporal (una página)
@@ -659,7 +725,7 @@
 				  const sliceHeightMm = (sliceHeightPx * pdfWidth) / canvas.width;
 
 				  if (page > 0) pdf.addPage();
-				  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, sliceHeightMm);
+				  pdf.addImage(imgData, 'PNG', 0, marginTop, pdfWidth, sliceHeightMm);
 
 				  yPx += sliceHeightPx;
 				  page++;
