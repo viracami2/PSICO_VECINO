@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PSICOPLAN PRO</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#004d40">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --main-bg: #f0f4f8;
+            --neu-base: #eceff4; 
+            --primary: #004d40; 
+            --secondary: #455a64; 
+            --accent-gold: #e0aa3e;
+            --risk-high: #b71c1c;
+            --text: #263238;
+            --neu-flat: 6px 6px 12px #cbd2da, -6px -6px 12px #ffffff;
+            --neu-pressed: inset 3px 3px 6px #cbd2da, inset -3px -3px 6px #ffffff;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Lato', sans-serif; background-color: var(--main-bg); 
+            margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; color: var(--text);
+            min-height: 100vh;
+        }
+        
+        .container { width: 100%; max-width: 980px; flex: 1; }
+
+        /* HEADER */
+        .app-header {
+            background: linear-gradient(135deg, #1c2529 0%, #2f3e46 100%);
+            padding: 30px 40px; margin-bottom: 30px; border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); border-bottom: 5px solid var(--accent-gold); 
+            display: flex; align-items: center; justify-content: flex-start; gap: 25px; text-align: left; position: relative; overflow: hidden;
+        }
+        .header-icon-svg { width: 75px; height: 75px; fill: #ffffff; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); flex-shrink: 0; z-index: 2; }
+        .header-texts { z-index: 2; }
+        .title-3d-wrapper { font-family: 'Nunito Sans', sans-serif; font-weight: 900; font-size: 2.6em; line-height: 1; margin: 0; display: flex; gap: 12px; flex-wrap: wrap; text-transform: uppercase; letter-spacing: 1px; }
+        .text-white-3d { color: #eceff1; text-shadow: 1px 1px 0 #000; }
+        .text-gold-3d { color: var(--accent-gold); text-shadow: 1px 1px 0px #8a661f; transform: translateY(-2px); }
+        .header-subtitle { font-family: 'Nunito Sans', sans-serif; font-weight: 600; font-size: 0.9em; color: #cfd8dc; margin-top: 8px; letter-spacing: 4px; text-transform: uppercase; }
+        
+        /* CARDS */
+        .card { background: #ffffff; border-radius: var(--radius); padding: 30px; margin-bottom: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.04); border: 1px solid #e0e6ed; }
+        .card h2 { color: var(--primary); font-family: 'Nunito Sans', sans-serif; font-weight:800; font-size: 1.3em; border-bottom: 2px solid #eceff1; padding-bottom: 15px; margin-top: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .section-badge { background: var(--accent-gold); color:white; font-size:0.6em; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; vertical-align: middle; letter-spacing: 1px; }
+
+        /* INPUTS */
+        .input-group { margin-bottom: 18px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.85em; color: var(--secondary); margin-left: 5px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .input-neu { width: 100%; padding: 14px; border: 1px solid transparent; border-radius: 12px; background: var(--neu-base); box-shadow: var(--neu-pressed); font-size: 16px; color: #37474f; font-family: 'Lato'; outline: none; transition: 0.3s; }
+        .input-neu:focus { box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff; color: var(--primary); border-color: rgba(0,77,64,0.2); background: #fff; }
+        textarea.input-neu { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+        /* LOGO STYLES */
+        .prof-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .new-logo-wrapper { background: #fff; border: 2px dashed #cfd8dc; border-radius: 15px; padding: 15px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; position: relative; }
+        .new-logo-wrapper.active { border-style: solid; border-color: #eee; }
+        .logo-display { max-width: 100%; max-height: 160px; border-radius: 8px; display: none; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-upload-label { background: var(--neu-base); color: var(--secondary); padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 0.9em; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: var(--neu-flat); transition: 0.2s; }
+        .btn-upload-label:hover { transform: translateY(-2px); }
+        .btn-upload-label i { color: var(--accent-gold); }
+        .btn-delete-logo { background: #ffebee; color: #c62828; border: none; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8em; cursor: pointer; margin-top: 5px; display: none; }
+
+        /* GRIDS & LAYOUT */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .cat-title { font-size: 0.85em; font-weight: 800; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; margin-top: 30px; padding-left: 10px; border-left: 4px solid var(--accent-gold); }
+        .clinical-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+
+        /* SWITCHES */
+        .tube-switch { position: relative; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: var(--neu-base); border-radius: 50px; box-shadow: var(--neu-flat); transition: all 0.2s ease; }
+        .tube-switch input { display: none; }
+        .tube-text { font-size: 0.9em; font-weight: 600; color: #607d8b; }
+        .tube-light { width: 10px; height: 10px; border-radius: 50%; background: #cfd8dc; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2); }
+        .tube-switch:has(input:checked) { box-shadow: var(--neu-pressed); background: #e0f2f1; }
+        .tube-switch:has(input:checked) .tube-text { color: var(--primary); font-weight: 700; }
+        .tube-switch:has(input:checked) .tube-light { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+
+        /* EXTRAS */
+        .mse-box { background: #f9fafb; padding: 20px; border-radius: 15px; border: 1px dashed #cfd8dc; margin-top: 15px; }
+        .mse-label { font-size: 0.75em; font-weight: 700; color: var(--secondary); margin-bottom: 5px; display: block; text-transform: uppercase; }
+        .psy-test-wrapper { border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
+        .psy-header { background: #fcfcfc; padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--secondary); transition: background 0.2s; }
+        .psy-content { display: none; padding: 20px; background: white; border-top: 1px solid #eee; }
+        .psy-content.active { display: block; animation: fadeIn 0.3s; }
+        .test-row { display: flex; flex-direction: column; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #eee; }
+        .test-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .test-q-text { font-weight: 600; color: #37474f; width: 70%; font-size: 0.95em; }
+        .test-val-display { font-size: 0.8em; font-weight: bold; color: var(--primary); background: #e0f2f1; padding: 4px 10px; border-radius: 10px; }
+        .slider-3d { -webkit-appearance: none; width: 100%; height: 12px; border-radius: 10px; background: #eceff1; box-shadow: inset 2px 2px 5px #cfd8dc, inset -2px -2px 5px #ffffff; outline: none; margin-top: 5px; }
+        .slider-3d::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(145deg, #ffffff, #cfd8dc); box-shadow: 2px 2px 5px #bebebe, -2px -2px 5px #ffffff; cursor: pointer; border: 1px solid #ddd; margin-top: -6px; }
+        .score-box { margin-top: 15px; padding: 15px; background: #fffde7; border-radius: 10px; text-align: center; font-weight: 800; color: var(--accent-gold-dark); border: 2px solid var(--accent-gold); }
+        .timeline-container-visual { position: relative; margin-top: 30px; padding-left: 20px; }
+        .timeline-container-visual::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 4px; background: #eceff1; border-radius: 2px; }
+        .tl-item-visual { position: relative; margin-bottom: 25px; background: white; border-radius: 12px; padding: 15px; border: 1px solid #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-left: 25px; }
+        .tl-item-visual::after { content: ''; position: absolute; left: -31px; top: 20px; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-gold); border: 4px solid #fff; box-shadow: 0 0 0 2px #eceff1; z-index: 2; }
+        .tl-header { display: flex; flex-direction: column; gap: 5px; font-size: 0.8em; font-weight: 800; color: var(--secondary); margin-bottom: 5px; text-transform: uppercase; }
+        .tl-content { font-size: 1em; color: var(--text); }
+        .btn-tl-delete { position: absolute; right: -10px; top: -10px; background: #ef5350; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .add-event-btn { background: var(--secondary); color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; justify-content: center; }
+        .add-event-btn:hover { background: var(--primary); }
+        .session-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; table-layout: fixed; }
+        .session-table th { background: var(--neu-base); padding: 10px; text-align: left; font-weight: 700; color: var(--secondary); border-radius: 8px 8px 0 0; }
+        .session-table td { padding: 10px; border-bottom: 1px solid #eee; word-wrap: break-word; }
+        .soap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .soap-box label { font-size: 0.8em; font-weight: 800; color: var(--primary); display: block; margin-bottom: 5px; border-left: 3px solid var(--accent-gold); padding-left: 6px;}
+
+        /* ACTIONS */
+        .action-container { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
+        .btn-action { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px; border: none; border-radius: 16px; font-weight: 800; font-size: 1em; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.3s; width: 100%; }
+        .btn-blue { background: linear-gradient(135deg, var(--primary) 0%, #00251a 100%); }
+        .btn-green { background: #546e7a; }
+        .btn-red { background: #c62828; }
+        .secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-small-add { padding: 10px 15px; font-size: 0.85em; background: var(--neu-base); border: 1px solid #cfd8dc; border-radius: 8px; cursor: pointer; font-weight: bold; color: var(--secondary); margin-top: 10px; width: 100%; }
+
+        .app-footer { margin-top: 40px; text-align: center; color: #90a4ae; font-size: 0.8em; font-weight: 400; padding: 20px; border-top: 1px solid #eceff1; width: 100%; }
+
+        @media (max-width: 768px) {
+            .app-header { flex-direction: column; text-align: center; padding: 20px; gap: 15px; }
+            .title-3d-wrapper { font-size: 2em; justify-content: center; }
+            .prof-grid, .grid-2, .grid-3, .soap-grid, .secondary-actions { grid-template-columns: 1fr !important; }
+            .card { padding: 20px 15px; }
+            .btn-small-add { margin-top: 5px; }
+            .session-table th, .session-table td { padding: 8px 5px; font-size: 0.85em; }
+        }
+
+        /* REPORTE OCULTO FLOTANTE */
+        #report-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; background: white; display: none; overflow-y: auto; }
+        #final-report { width: 950px; min-height: 1200px; background: white; padding: 60px; font-family: 'Lato', sans-serif; color: #263238; display: flex; flex-direction: column; justify-content: space-between; position: relative; margin: 0 auto; }
+        #final-report::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 10px; background: var(--primary); }
+        .pdf-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #cfd8dc; padding-bottom: 25px; margin-bottom: 30px; }
+        .pdf-title-doc { font-family: 'Nunito Sans', sans-serif; font-weight: 800; font-size: 2em; color: var(--primary); margin: 0; line-height: 1.2; }
+        .pdf-section-title { background: #eceff1; color: var(--primary); padding: 8px 15px; font-family: 'Nunito Sans'; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9em; margin-top: 20px; margin-bottom: 10px; border-left: 5px solid var(--accent-gold); }
+        .pdf-grid-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 0.9em; margin-bottom: 10px; }
+        .pdf-label { font-weight: 800; color: #546e7a; font-size: 0.8em; text-transform: uppercase; }
+        .pdf-text { font-size: 0.95em; line-height: 1.5; text-align: justify; white-space: pre-wrap; margin-bottom: 5px; }
+        .pdf-psy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .pdf-psy-card { border: 1px solid #eee; padding: 10px; border-radius: 8px; background: #fafafa; }
+        .pdf-mse-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 5px; }
+        .pdf-mse-item { background: #fafafa; padding: 6px; border-radius: 5px; border-left: 3px solid #b0bec5; font-size: 0.8em; }
+        /* Sin footer en PDF */
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <header class="app-header">
+            <i class="fas fa-brain header-bg-decor"></i>
+            <svg class="header-icon-svg" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <g><path d="m489.5 0h-30c-45.491 0-82.5 37.01-82.5 82.5v75c0 47.654-36.815 86.87-83.5 90.694v-165.694c0-20.678 16.822-37.5 37.5-37.5 12.407 0 22.5-10.094 22.5-22.5s-10.093-22.5-22.5-22.5h-150c-12.407 0-22.5 10.094-22.5 22.5s10.093 22.5 22.5 22.5c20.678 0 37.5 16.822 37.5 37.5v165.694c-46.685-3.824-83.5-43.04-83.5-90.694v-45c0-4.143-3.358-7.5-7.5-7.5s-7.5 3.357-7.5 7.5v45c0 58.448 47.551 106 106 106 4.142 0 7.5-3.357 7.5-7.5v-173.5c0-28.948-23.551-52.5-52.5-52.5-4.136 0-7.5-3.364-7.5-7.5s3.364-7.5 7.5-7.5h150c4.136 0 7.5 3.364 7.5 7.5s-3.364 7.5-7.5 7.5c-28.949 0-52.5 23.552-52.5 52.5v173.5c0 4.143 3.358 7.5 7.5 7.5 58.449 0 106-47.552 106-106v-75c0-37.22 30.28-67.5 67.5-67.5h30c4.136 0 7.5 3.364 7.5 7.5s-3.364 7.5-7.5 7.5c-28.949 0-52.5 23.552-52.5 52.5v75c0 83.262-67.738 151-151 151-4.142 0-7.5 3.357-7.5 7.5v113.5c0 28.948 23.551 52.5 52.5 52.5 4.136 0 7.5 3.364 7.5 7.5s-3.364 7.5-7.5 7.5h-150c-4.136 0-7.5-3.364-7.5-7.5s3.364-7.5 7.5-7.5c28.949 0 52.5-23.552 52.5-52.5v-113.5c0-4.143-3.358-7.5-7.5-7.5-83.262 0-151-67.738-151-151v-75c0-28.948-23.551-52.5-52.5-52.5-4.136 0-7.5-3.364-7.5-7.5s3.364-7.5 7.5-7.5h30c37.22 0 67.5 30.28 67.5 67.5 0 4.143 3.358 7.5 7.5 7.5s7.5-3.357 7.5-7.5c0-45.49-37.009-82.5-82.5-82.5h-30c-12.407 0-22.5 10.094-22.5 22.5s10.093 22.5 22.5 22.5c20.678 0 37.5 16.822 37.5 37.5v75c0 89.019 70.435 161.896 158.5 165.833v106.167c0 20.678-16.822 37.5-37.5 37.5-12.407 0-22.5 10.094-22.5 22.5s10.093 22.5 22.5 22.5h150c12.407 0 22.5-10.094 22.5-22.5s-10.093-22.5-22.5-22.5c-20.678 0-37.5-16.822-37.5-37.5v-106.167c88.065-3.937 158.5-76.814 158.5-165.833v-75c0-20.678 16.822-37.5 37.5-37.5 12.407 0 22.5-10.094 22.5-22.5s-10.093-22.5-22.5-22.5z"/></g>
+            </svg>
+            <div class="header-texts">
+                <h1 class="title-3d-wrapper">
+                    <span class="text-white-3d">PSICOPLAN</span>
+                    <span class="text-gold-3d">PRO</span>
+                </h1>
+                <div class="header-subtitle">HISTORIA CLÍNICA DIGITAL</div>
+            </div>
+        </header>
+
+        <section class="card">
+            <h2><i class="fas fa-user-md"></i> Profesional</h2>
+            <div class="prof-grid">
+                <div>
+                    <div class="input-group"><label>Nombre del Terapeuta:</label><input type="text" id="docName" class="input-neu"></div>
+                    <div class="grid-2">
+                        <div class="input-group"><label>Especialidad:</label><input type="text" id="docSpec" class="input-neu"></div>
+                        <div class="input-group"><label>Cédula:</label><input type="text" id="docCed" class="input-neu"></div>
+                    </div>
+                    <div class="input-group"><label>Institución:</label><input type="text" id="docUni" class="input-neu"></div>
+                    <div class="grid-2">
+                        <div class="input-group"><label>Dirección:</label><input type="text" id="docAddress" class="input-neu"></div>
+                        <div class="input-group"><label>Contacto:</label><input type="tel" id="docPhone" class="input-neu"></div>
+                    </div>
+                </div>
+                
+                <div class="new-logo-wrapper" id="newLogoBox">
+                    <img id="logoDisplay" class="logo-display" src="">
+                    <input type="file" id="newLogoInput" accept="image/*" style="display: none;" onchange="handleNewLogo(this)">
+                    <label for="newLogoInput" class="btn-upload-label" id="lblUpload"><i class="fas fa-upload"></i> Subir Logo</label>
+                    <button class="btn-delete-logo" id="btnDelLogo" onclick="deleteNewLogo()"><i class="fas fa-trash"></i> Eliminar</button>
+                    <div style="font-size:0.75em; color:#90a4ae; margin-top:8px;" id="txtLogoInfo">Formato: PNG/JPG<br>Max 2MB</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-user"></i> Datos del Paciente</h2>
+            <div class="grid-2">
+                <div class="input-group"><label>Nombre Completo:</label><input type="text" id="patName" class="input-neu"></div>
+                <div class="grid-3">
+                    <div class="input-group"><label>Edad:</label><input type="text" id="patAge" class="input-neu"></div>
+                    <div class="input-group"><label>Género:</label><select id="patGender" class="input-neu"><option value="">Seleccione</option><option value="Masc">Masculino</option><option value="Fem">Femenino</option><option value="NB">No Binario</option></select></div>
+                    <div class="input-group"><label>Ocupación:</label><input type="text" id="patJob" class="input-neu"></div>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="input-group"><label>Escolaridad:</label><input type="text" id="patSchool" class="input-neu"></div>
+                <div class="input-group"><label>Contacto Emergencia:</label><input type="text" id="patEmerg" class="input-neu"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-history"></i> Motivo & Antecedentes</h2>
+            <div class="input-group"><label>Motivo de Consulta:</label><textarea id="reasonDesc" class="input-neu"></textarea></div>
+            
+            <div class="cat-title">Antecedentes Clínicos</div>
+            <div class="clinical-grid">
+                <label class="tube-switch"><input type="checkbox" value="Ansiedad" class="hist-chk"><span class="tube-text">Ansiedad</span><div class="tube-light"></div></label>
+                <label class="tube-switch"><input type="checkbox" value="Depresión" class="hist-chk"><span class="tube-text">Depresión</span><div class="tube-light"></div></label>
+                <label class="tube-switch"><input type="checkbox" value="Trauma" class="hist-chk"><span class="tube-text">Trauma</span><div class="tube-light"></div></label>
+                <label class="tube-switch"><input type="checkbox" value="Riesgo Suicida" class="hist-chk"><span class="tube-text">Riesgo Suicida</span><div class="tube-light" style="background:#e53935;"></div></label>
+                <label class="tube-switch"><input type="checkbox" value="Duelo" class="hist-chk"><span class="tube-text">Duelo</span><div class="tube-light"></div></label>
+                <label class="tube-switch"><input type="checkbox" value="Adicciones" class="hist-chk"><span class="tube-text">Adicciones</span><div class="tube-light"></div></label>
+            </div>
+            <div class="input-group" style="margin-top:15px;"><label>Tratamientos Previos / Medicación:</label><input type="text" id="prevTreat" class="input-neu"></div>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-users"></i> Historia Familiar y Social</h2>
+            <div class="grid-2">
+                 <div class="input-group"><label>Dinámica Familiar:</label><textarea id="famHist" class="input-neu"></textarea></div>
+                <div class="input-group"><label>Vida Social y Red de Apoyo:</label><textarea id="socHist" class="input-neu"></textarea></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-brain"></i> Examen Mental</h2>
+            <div class="mse-box">
+                <div class="cat-title" style="margin-top:0;">Observaciones Específicas (MSE)</div>
+                <div class="grid-3">
+                    <div><label class="mse-label">Apariencia/Conducta</label><input type="text" id="mseAppear" class="input-neu"></div>
+                    <div><label class="mse-label">Orientación</label><input type="text" id="mseOrient" class="input-neu"></div>
+                    <div><label class="mse-label">Atención/Memoria</label><input type="text" id="mseMem" class="input-neu"></div>
+                    <div><label class="mse-label">Lenguaje</label><input type="text" id="mseLang" class="input-neu"></div>
+                    <div><label class="mse-label">Afecto/Ánimo</label><input type="text" id="mseMood" class="input-neu"></div>
+                    <div><label class="mse-label">Pensamiento/Juicio</label><input type="text" id="mseThought" class="input-neu"></div>
+                </div>
+            </div>
+            <div class="input-group" style="margin-top:20px;"><label>Autoconcepto / Personalidad:</label><textarea id="selfConcept" class="input-neu" style="min-height:70px;"></textarea></div>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-chart-pie"></i> Escalas Psicométricas <span class="section-badge">Sliders 3D</span></h2>
+            <p style="font-size:0.85em; color:#78909c; margin-top:-10px;">Desliza el control para calificar. Resultados orientativos.</p>
+
+            <div class="psy-test-wrapper">
+                <div class="psy-header" id="head-bdi"><span><i class="fas fa-cloud-rain"></i> Escala de Depresión</span><span id="score-bdi-display">Sin realizar</span></div>
+                <div id="test-bdi" class="psy-content"><div id="bdi-questions"></div><div class="score-box" id="res-bdi">--</div></div>
+            </div>
+            <div class="psy-test-wrapper">
+                <div class="psy-header" id="head-bai"><span><i class="fas fa-bolt"></i> Escala de Ansiedad</span><span id="score-bai-display">Sin realizar</span></div>
+                <div id="test-bai" class="psy-content"><div id="bai-questions"></div><div class="score-box" id="res-bai">--</div></div>
+            </div>
+             <div class="psy-test-wrapper" style="border-color:#ffcdd2;">
+                <div class="psy-header" id="head-risk" style="background:#ffebee;"><span style="color:#c62828;"><i class="fas fa-exclamation-triangle"></i> Riesgo Suicida</span><span id="score-risk-display">--</span></div>
+                <div id="test-risk" class="psy-content"><div id="risk-questions"></div><div class="score-box" id="res-risk" style="color:#c62828; border-color:#c62828; background:#ffebee;">--</div></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-stream"></i> Línea de Vida <span class="section-badge">Visual</span></h2>
+            <div class="grid-3">
+                <div class="input-group"><label>Etapa:</label><select id="tl-stage" class="input-neu"><option>Infancia</option><option>Adolescencia</option><option>Adultez</option><option>Actualidad</option></select></div>
+                <div class="input-group"><label>Fecha / Edad:</label><input type="text" id="tl-date" class="input-neu" placeholder="Ej: 15 años"></div>
+                <div class="input-group"><label>Evento:</label><input type="text" id="tl-event" class="input-neu" placeholder="Descripción breve..."></div>
+            </div>
+            
+            <button class="add-event-btn" onclick="addTimelineItem()">
+                <i class="fas fa-plus-circle"></i> AGREGAR EVENTO
+            </button>
+            
+            <div id="timeline-container-visual" class="timeline-container-visual"></div>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-notes-medical"></i> Registro Clínico y Seguimiento</h2>
+            <div class="cat-title" style="margin-top:0;">Notas SOAP</div>
+            <div class="soap-grid">
+                <div class="soap-box"><label>S - Subjetivo</label><textarea id="soap-s" class="input-neu"></textarea></div>
+                <div class="soap-box"><label>O - Objetivo</label><textarea id="soap-o" class="input-neu"></textarea></div>
+                <div class="soap-box"><label>A - Análisis</label><textarea id="soap-a" class="input-neu"></textarea></div>
+                <div class="soap-box"><label>P - Plan</label><textarea id="soap-p" class="input-neu"></textarea></div>
+            </div>
+            <div class="cat-title">Historial de Sesiones</div>
+            <div class="grid-2">
+                <div class="input-group"><label>Fecha:</label><input type="date" id="sess-date" class="input-neu"></div>
+                <div class="input-group"><label>Objetivo:</label><div style="display:flex; gap:10px;"><input type="text" id="sess-obj" class="input-neu"><button class="btn-small-add" style="margin:0;" onclick="addSession()">OK</button></div></div>
+            </div>
+            <table class="session-table"><tbody id="session-body"></tbody></table>
+        </section>
+
+        <section class="card">
+            <h2><i class="fas fa-clipboard-check"></i> Diagnóstico y Firma</h2>
+            <div class="input-group"><label style="font-size:1em; color:var(--primary);">Impresión Diagnóstica Final:</label><textarea id="dxImpression" class="input-neu" style="font-weight:700;"></textarea></div>
+            
+            <div style="margin-top:30px;">
+                <canvas id="signature-pad" style="width:100%; height:150px; background:#fcfcfc; border-radius:10px; border:1px solid #cfd8dc; touch-action:none;"></canvas>
+                <button id="btn-clear-sig" onclick="clearSig()" style="color:var(--risk-high); background:none; border:none; margin-top:5px; cursor:pointer;">Borrar Firma</button>
+            </div>
+        </section>
+
+        <div class="action-container">
+            <button class="btn-action btn-blue" id="btn-generate-pdf" onclick="generatePDF()"><i class="fas fa-file-pdf"></i> GENERAR EXPEDIENTE COMPLETO</button>
+            <div class="secondary-actions">
+                <button class="btn-action btn-green" onclick="clearProData()">Borrar Configuración</button>
+                <button class="btn-action btn-red" onclick="resetForm()">Reiniciar Paciente</button>
+            </div>
+        </div>
+        
+        <footer class="app-footer">Desarrollado con cariño  por vcastro</footer>
+    </div>
+
+    <div id="report-wrapper">
+        <div id="final-report">
+            <div style="flex: 1;">
+                <div class="pdf-header">
+                    <div style="width: 30%;"><img id="r-logo" style="max-height:100px; max-width:100%; display:none;"></div>
+                    <div style="width: 65%; text-align: right;">
+                        <h1 id="r-docName" class="pdf-title-doc"></h1>
+                        <p id="r-docSpec" style="margin:5px 0; font-weight:700; color:#455a64;"></p>
+                        <p id="r-docCed" style="font-size:0.85em; margin:0;"></p>
+                        <p id="r-docUni" style="font-size:0.85em; margin:0;"></p>
+                        <p id="r-docAddress" style="font-size:0.85em; margin:0;"></p>
+                    </div>
+                </div>
+                <div style="text-align:center; border-bottom:1px solid #ccc; padding-bottom:10px; margin-bottom:20px;">
+                    <strong style="color:var(--primary); font-size:1.4em; letter-spacing:2px;">EXPEDIENTE CLÍNICO INTEGRAL</strong>
+                    <div style="font-size:0.9em; color:#78909c;">Fecha: <span id="r-date"></span></div>
+                </div>
+                <div class="pdf-grid-info">
+                    <div><span class="pdf-label">Paciente:</span> <span id="r-patName"></span></div>
+                    <div><span class="pdf-label">Edad:</span> <span id="r-patAge"></span></div>
+                    <div><span class="pdf-label">Género:</span> <span id="r-patGender"></span></div>
+                    <div><span class="pdf-label">Ocupación:</span> <span id="r-patJob"></span></div>
+                    <div><span class="pdf-label">Escolaridad:</span> <span id="r-patSchool"></span></div>
+                    <div><span class="pdf-label">Emergencia:</span> <span id="r-patEmerg"></span></div>
+                </div>
+                <div class="pdf-section-title">Antecedentes y Motivo</div>
+                <div class="pdf-text"><strong>Motivo:</strong> <span id="r-reason"></span></div>
+                <div class="pdf-text"><strong>Antecedentes:</strong> <span id="r-history"></span></div>
+                
+                <div class="pdf-section-title">Historia Familiar y Social</div>
+                <div class="pdf-text" id="r-famSocial"></div>
+                
+                <div class="pdf-section-title">Examen Mental y Personalidad</div>
+                <div class="pdf-mse-grid" id="r-mse-grid"></div>
+                <div class="pdf-text" style="margin-top:10px;"><strong>Autoconcepto:</strong> <span id="r-self"></span></div>
+
+                <div id="r-psy-section" style="display:none;">
+                    <div class="pdf-section-title">Evaluación Psicométrica</div>
+                    <div class="pdf-psy-grid" id="r-psy-grid"></div>
+                </div>
+
+                <div id="r-timeline-section" style="display:none;">
+                    <div class="pdf-section-title">Línea de Vida</div>
+                    <div id="r-timeline-container" style="font-size:0.9em;"></div>
+                </div>
+
+                <div class="pdf-section-title">Registro Clínico (SOAP)</div>
+                <div class="pdf-grid-info" style="grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div class="pdf-mse-item"><strong>S:</strong> <span id="r-soap-s"></span></div>
+                    <div class="pdf-mse-item"><strong>O:</strong> <span id="r-soap-o"></span></div>
+                    <div class="pdf-mse-item"><strong>A:</strong> <span id="r-soap-a"></span></div>
+                    <div class="pdf-mse-item"><strong>P:</strong> <span id="r-soap-p"></span></div>
+                </div>
+                <div class="pdf-section-title">Diagnóstico Final</div>
+                <div class="pdf-text" style="font-weight:bold; color:var(--primary);" id="r-dx"></div>
+                
+                <div style="margin-top:50px; text-align:right; margin-right: 20px;">
+                    <img id="r-sig" style="height:60px; max-width:250px; display:inline-block;">
+                    <div style="border-top:1px solid #333; width:250px; margin-left: auto; padding-top:5px; font-size:0.8em; text-align:center;">
+                        <span id="r-sig-docName" style="display:block; font-weight:bold; margin-bottom:2px;"></span>
+                        Firma del Psicólogo(a)
+                    </div>
+                </div>
+            </div>
+            </div>
+    </div>
+
+    <script>
+        // SERVICE WORKER REGISTRATION
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW registrado', reg))
+                .catch(err => console.log('SW error', err));
+            });
+        }
+
+        // LOGO LOGIC
+        function handleNewLogo(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const MAX_WIDTH = 300;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        canvas.width = width; canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const optimizedDataUrl = canvas.toDataURL('image/png');
+                        const display = document.getElementById('logoDisplay');
+                        display.src = optimizedDataUrl; display.style.display = 'block';
+                        document.getElementById('newLogoBox').classList.add('active');
+                        document.getElementById('btnDelLogo').style.display = 'inline-block';
+                        document.getElementById('lblUpload').innerHTML = '<i class="fas fa-sync-alt"></i> Cambiar';
+                        document.getElementById('txtLogoInfo').style.display = 'none';
+                        try { localStorage.setItem('psicopro_logo_opt', optimizedDataUrl); } catch (err) {}
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function deleteNewLogo() {
+            if(confirm("¿Eliminar logo?")) {
+                localStorage.removeItem('psicopro_logo_opt');
+                document.getElementById('logoDisplay').src = '';
+                document.getElementById('logoDisplay').style.display = 'none';
+                document.getElementById('newLogoBox').classList.remove('active');
+                document.getElementById('btnDelLogo').style.display = 'none';
+                document.getElementById('lblUpload').innerHTML = '<i class="fas fa-upload"></i> Subir Logo';
+                document.getElementById('txtLogoInfo').style.display = 'block';
+                document.getElementById('newLogoInput').value = '';
+            }
+        }
+
+        function loadSavedLogo() {
+            const saved = localStorage.getItem('psicopro_logo_opt');
+            if(saved) {
+                const display = document.getElementById('logoDisplay');
+                display.src = saved; display.style.display = 'block';
+                document.getElementById('newLogoBox').classList.add('active');
+                document.getElementById('btnDelLogo').style.display = 'inline-block';
+                document.getElementById('lblUpload').innerHTML = '<i class="fas fa-sync-alt"></i> Cambiar';
+                document.getElementById('txtLogoInfo').style.display = 'none';
+            }
+        }
+
+        // INIT
+        const PROF_FIELDS = ['docName', 'docSpec', 'docCed', 'docUni', 'docAddress', 'docPhone'];
+        window.onload = () => {
+            PROF_FIELDS.forEach(f => {
+                const v = localStorage.getItem(f);
+                if(v) document.getElementById(f).value = v;
+                document.getElementById(f).addEventListener('input', function(){ localStorage.setItem(f, this.value) });
+            });
+            loadSavedLogo();
+            initPsychometrics();
+        };
+
+        // TESTS
+        const tests = {
+            bdi: { items: ["Tristeza", "Pesimismo", "Fracaso", "Pérdida de Placer", "Culpa", "Castigo", "Disconformidad", "Autocrítica", "Suicidio", "Llanto"], labels: ["0-Nada", "1-Leve", "2-Mod", "3-Sev"], calc: s => s<10?"Min":s<19?"Leve":s<30?"Mod":"Sev" },
+            bai: { items: ["Hormigueo", "Calor", "Temblor", "Incapaz relajar", "Miedo", "Mareo", "Latidos", "Inestable", "Aterrorizado", "Nervioso"], labels: ["0-Nada", "1-Leve", "2-Mod", "3-Sev"], calc: s => s<8?"Min":s<16?"Leve":s<26?"Mod":"Sev" },
+            risk: { items: ["Deseo morir", "Plan suicida", "Intención", "Intentos previos", "Falta apoyo"], labels: ["No", "Sí"], max: 1, calc: s => s==0?"Bajo":s<3?"Medio":"ALTO" }
+        };
+
+        function initPsychometrics() {
+            ['bdi', 'bai', 'risk'].forEach(k => {
+                const c = document.getElementById(k+'-questions');
+                const tData = tests[k];
+                const maxVal = tData.max !== undefined ? tData.max : 3;
+                tData.items.forEach((item, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'test-row';
+                    div.innerHTML = `<div class="test-label-row"><div class="test-q-text">${idx+1}. ${item}</div><div class="test-val-display" id="val-${k}-${idx}">${tData.labels[0]}</div></div><input type="range" min="0" max="${maxVal}" value="0" step="1" class="slider-3d" data-test="${k}" data-idx="${idx}">`;
+                    c.appendChild(div);
+                });
+                document.getElementById('head-'+k).addEventListener('click', () => { document.querySelectorAll('.psy-content').forEach(d => { if(d.id!==('test-'+k)) d.classList.remove('active'); }); document.getElementById('test-'+k).classList.toggle('active'); });
+            });
+        }
+
+        document.addEventListener('input', (e) => {
+            if(e.target.classList.contains('slider-3d')) {
+                const el = e.target;
+                const key = el.dataset.test;
+                const idx = el.dataset.idx;
+                const val = parseInt(el.value);
+                document.getElementById(`val-${key}-${idx}`).innerText = tests[key].labels[val] || val;
+                updateScores(key);
+            }
+        });
+
+        function updateScores(key) {
+            let total = 0; let answered = false;
+            document.querySelectorAll(`input[data-test="${key}"]`).forEach(s => { if(s.value > 0) answered = true; total += parseInt(s.value); });
+            const d = document.getElementById('score-'+key+'-display');
+            const r = document.getElementById('res-'+key);
+            if(!answered && total === 0) { d.innerText="Sin realizar"; r.innerText="--"; } 
+            else { const i = tests[key].calc(total); d.innerText=`${total} (${i})`; r.innerText=`Total: ${total} - Nivel: ${i}`; }
+        }
+
+        // TIMELINE & SESSIONS
+        function addTimelineItem() {
+            const stage = document.getElementById('tl-stage').value;
+            const date = document.getElementById('tl-date').value;
+            const eventTxt = document.getElementById('tl-event').value;
+            if(!eventTxt) { alert("Escribe una descripción del evento."); return; }
+            const container = document.getElementById('timeline-container-visual');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'tl-item-visual';
+            itemDiv.innerHTML = `<div class="tl-header"><span>${stage}</span><span>${date}</span></div><div class="tl-content">${eventTxt}</div><button class="btn-tl-delete">×</button>`;
+            itemDiv.querySelector('.btn-tl-delete').addEventListener('click', function() { this.parentElement.remove(); });
+            container.appendChild(itemDiv);
+            document.getElementById('tl-date').value = ""; document.getElementById('tl-event').value = "";
+        }
+        function addSession() {
+            const d = document.getElementById('sess-date').value;
+            const o = document.getElementById('sess-obj').value;
+            if(d&&o) { document.getElementById('session-body').innerHTML += `<tr><td>${d}</td><td>${o}</td></tr>`; }
+        }
+
+        // SIG
+        const cvs = document.getElementById('signature-pad'); const ctx = cvs.getContext('2d');
+        function resizeSig(){ const r=cvs.getBoundingClientRect(); cvs.width=r.width; cvs.height=r.height; ctx.lineWidth=2; ctx.strokeStyle="#263238"; } 
+        window.addEventListener('resize', resizeSig); setTimeout(resizeSig,500);
+        let isD=false; 
+        const getXY=e=>{const r=cvs.getBoundingClientRect();return{x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,y:(e.touches?e.touches[0].clientY:e.clientY)-r.top}};
+        cvs.addEventListener('mousedown',e=>{isD=true;ctx.beginPath();ctx.moveTo(getXY(e).x,getXY(e).y)}); 
+        cvs.addEventListener('mousemove',e=>{if(isD)ctx.lineTo(getXY(e).x,getXY(e).y);ctx.stroke()}); 
+        window.addEventListener('mouseup',()=>isD=false);
+        cvs.addEventListener('touchstart',e=>{isD=true;ctx.beginPath();ctx.moveTo(getXY(e).x,getXY(e).y);e.preventDefault()}); 
+        cvs.addEventListener('touchmove',e=>{if(isD)ctx.lineTo(getXY(e).x,getXY(e).y);ctx.stroke();e.preventDefault()});
+        function clearSig(){ ctx.clearRect(0,0,cvs.width,cvs.height); }
+
+        // PDF GENERATION
+        async function generatePDF() {
+            const btn = document.getElementById('btn-generate-pdf');
+            const wrapper = document.getElementById('report-wrapper');
+            const originalText = btn.innerHTML;
+            
+            try {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GENERANDO...';
+                
+                const safeSetTxt = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val || ""; };
+                
+                ['docName','docSpec','docCed','docUni','docAddress'].forEach(i => safeSetTxt('r-'+i, document.getElementById(i).value));
+                
+                const l = document.getElementById('logoDisplay'); const rl = document.getElementById('r-logo');
+                if(l.src && l.style.display !== 'none') { rl.src = l.src; rl.style.display = 'block'; } else { rl.style.display = 'none'; }
+                
+                ['patName','patAge','patGender','patJob','patSchool','patEmerg'].forEach(i => safeSetTxt('r-'+i, document.getElementById(i).value));
+                safeSetTxt('r-date', new Date().toLocaleDateString());
+                safeSetTxt('r-reason', document.getElementById('reasonDesc').value);
+                
+                let h=[]; document.querySelectorAll('.hist-chk:checked').forEach(c=>h.push(c.value));
+                if(document.getElementById('prevTreat').value) h.push(`Tx: ${document.getElementById('prevTreat').value}`);
+                safeSetTxt('r-history', h.join(', ')||"Sin registro");
+                safeSetTxt('r-famSocial', `FAMILIAR: ${document.getElementById('famHist').value}\n\nSOCIAL: ${document.getElementById('socHist').value}`);
+                
+                const mse = document.getElementById('r-mse-grid'); 
+                if(mse) {
+                    mse.innerHTML="";
+                    const mLabels = {mseAppear:"Apariencia", mseOrient:"Orientación", mseMem:"Atención", mseLang:"Lenguaje", mseMood:"Afecto", mseThought:"Pensamiento"};
+                    for(let k in mLabels) { if(document.getElementById(k).value) mse.innerHTML+=`<div class="pdf-mse-item"><strong>${mLabels[k]}</strong>: ${document.getElementById(k).value}</div>`; }
+                }
+                safeSetTxt('r-self', document.getElementById('selfConcept').value);
+
+                const rPsy=document.getElementById('r-psy-grid'); 
+                if(rPsy) {
+                    rPsy.innerHTML=""; let hp=false;
+                    ['bdi','bai','risk'].forEach(k=>{ const txt=document.getElementById('score-'+k+'-display').innerText; if(!txt.includes('Sin')) { hp=true; rPsy.innerHTML+=`<div class="pdf-psy-card"><strong>${k.toUpperCase()}:</strong> ${txt}</div>`; } });
+                    document.getElementById('r-psy-section').style.display=hp?'block':'none';
+                }
+
+                const rTime=document.getElementById('r-timeline-container'); 
+                if(rTime) {
+                    rTime.innerHTML="";
+                    const items=document.querySelectorAll('.tl-item-visual');
+                    if(items.length>0){ 
+                        document.getElementById('r-timeline-section').style.display='block'; 
+                        items.forEach(i => {
+                            const header = i.querySelector('.tl-header').innerText.replace('\n', ' - ');
+                            const content = i.querySelector('.tl-content').innerText;
+                            rTime.innerHTML+=`<div style="margin-bottom:5px;"><strong>• ${header}:</strong> ${content}</div>`;
+                        }); 
+                    } else { document.getElementById('r-timeline-section').style.display='none'; }
+                }
+
+                ['s','o','a','p'].forEach(x => safeSetTxt('r-soap-'+x, document.getElementById('soap-'+x).value));
+                safeSetTxt('r-dx', document.getElementById('dxImpression').value);
+                
+                // FIRMA & NOMBRE
+                const rsig = document.getElementById('r-sig');
+                if(rsig) rsig.src = cvs.toDataURL();
+                safeSetTxt('r-sig-docName', document.getElementById('docName').value);
+
+                window.scrollTo(0,0);
+                wrapper.style.display = 'block'; 
+                await new Promise(resolve => setTimeout(resolve, 800)); 
+                
+                const element = document.getElementById('final-report');
+                const canvas = await html2canvas(element, { scale: 2, logging: false, allowTaint: true, useCORS: true, scrollY: -window.scrollY });
+
+                wrapper.style.display = 'none'; 
+
+                <!-- const imgData = canvas.toDataURL('image/png'); -->
+                <!-- const { jsPDF } = window.jspdf; -->
+                <!-- const pdf = new jsPDF('p', 'mm', 'a4'); -->
+                <!-- const pdfWidth = pdf.internal.pageSize.getWidth(); -->
+                <!-- const imgProps = pdf.getImageProperties(imgData); -->
+                <!-- const imgHeight = (imgProps.height * pdfWidth) / imgProps.width; -->
+
+                <!-- pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight); -->
+                <!-- const pName = document.getElementById('patName').value || 'Paciente'; -->
+                <!-- pdf.save(`Expediente_${pName}.pdf`); -->
+				
+								
+				const { jsPDF } = window.jspdf;
+				const pdf = new jsPDF('p', 'mm', 'a4');
+
+				const pdfWidth = pdf.internal.pageSize.getWidth();
+				const pdfHeight = pdf.internal.pageSize.getHeight();
+
+				// Alto en px del canvas que equivale a 1 página en mm
+				const pageHeightPx = Math.floor((canvas.width * pdfHeight) / pdfWidth);
+
+				let yPx = 0;
+				let page = 0;
+
+				while (yPx < canvas.height) {
+				  const sliceHeightPx = Math.min(pageHeightPx, canvas.height - yPx);
+
+				  // Canvas temporal (una página)
+				  const pageCanvas = document.createElement('canvas');
+				  pageCanvas.width = canvas.width;
+				  pageCanvas.height = sliceHeightPx;
+
+				  const pageCtx = pageCanvas.getContext('2d');
+				  pageCtx.drawImage(
+					canvas,
+					0, yPx, canvas.width, sliceHeightPx,  // recorte
+					0, 0, canvas.width, sliceHeightPx     // destino
+				  );
+
+				  const imgData = pageCanvas.toDataURL('image/png');
+
+				  // Convertir alto del slice a mm manteniendo proporción
+				  const sliceHeightMm = (sliceHeightPx * pdfWidth) / canvas.width;
+
+				  if (page > 0) pdf.addPage();
+				  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, sliceHeightMm);
+
+				  yPx += sliceHeightPx;
+				  page++;
+				}
+
+				const pName = document.getElementById('patName').value || 'Paciente';
+				pdf.save(`Expediente_${pName}.pdf`);
+
+				
+                
+            } catch (err) {
+                alert("Error al generar PDF: " + err.message);
+                wrapper.style.display = 'none';
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        window.clearProData = function() { if(confirm("¿Borrar configuración?")) { PROF_FIELDS.forEach(f => { localStorage.removeItem(f); document.getElementById(f).value = ""; }); deleteNewLogo(); } };
+        window.resetForm = function() { if(confirm("¿Reiniciar todo?")) { document.querySelectorAll('input:not([id^="doc"]), textarea, select').forEach(el => el.value = ""); document.querySelectorAll('.hist-chk').forEach(chk => chk.checked = false); document.getElementById('timeline-container-visual').innerHTML = ""; document.getElementById('session-body').innerHTML = ""; document.querySelectorAll('.slider-3d').forEach(s => { s.value=0; s.dispatchEvent(new Event('input')); }); ctx.clearRect(0,0,cvs.width,cvs.height); } };
+    </script>
+</body>
+</html>
